@@ -1,0 +1,4 @@
+__pycache__/
+conf.py
+log.txt
+current_stories.json

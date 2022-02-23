@@ -1,0 +1,6 @@
+transformers
+pydantic
+asyncpg
+alembic
+sqlalchemy
+git+https://github.com/Pycord-Development/pycord.git
