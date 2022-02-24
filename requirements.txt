@@ -3,4 +3,5 @@ pydantic
 asyncpg
 alembic
 sqlalchemy
+psycopg2
 git+https://github.com/Pycord-Development/pycord.git

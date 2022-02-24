@@ -139,8 +139,31 @@ class Sukima_ModelProvider(ModelProvider):
         :rtype: str
         :raises Exception: If the request fails.
         """
+        print(args)
+        args = {
+            'model': args.model,
+            'prompt': args.prompt,
+            'sample_args': {
+                'temp': args.sample_args.temp,
+                'top_p': args.sample_args.top_p,
+                'top_a': args.sample_args.top_a,
+                'top_k': args.sample_args.top_k,
+                'typical_p': args.sample_args.typical_p,
+                'tfs': args.sample_args.tfs,
+                'rep_p': args.sample_args.rep_p,
+                'rep_p_range': args.sample_args.rep_p_range,
+                'rep_p_slope': args.sample_args.rep_p_slope,
+                'bad_words': args.sample_args.bad_words
+            },
+            'gen_args': {
+                'max_length': args.gen_args.max_length,
+                'max_time': args.gen_args.max_time,
+                'min_length': args.gen_args.min_length,
+                'eos_token_id': args.gen_args.eos_token_id
+            }
+        }
         try:
-            r = requests.post(f'{self.endpoint_url}/api/v1/models/generate', data=json.dumps(args.to_dict()), headers={'Authorization': f'Bearer {self.token}'}, timeout=30.0)
+            r = requests.post(f'{self.endpoint_url}/api/v1/models/generate', data=json.dumps(args), headers={'Authorization': f'Bearer {self.token}'}, timeout=60.0)
         except Exception as e:
             raise e
         if r.status_code == 200:
