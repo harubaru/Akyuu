@@ -150,7 +150,7 @@ async def cmd_story_retry(id: int=None, provider: ModelProvider=None):
     story = await get_story(uuid)
     story.undo()
     await story.save()
-    await user.generate(None, uuid, provider)
+    await user.generate(None, False, uuid, provider)
 
 # !alter
 async def cmd_story_alter(id: int=None, new_text: str=None):

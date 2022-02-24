@@ -107,8 +107,8 @@ class User:
         if story is None:
             raise ValueError('story not found')
         
-        prefix = '\n' if newline_prefix else ''
         if context is not None:
+            prefix = '\n' if newline_prefix else ''
             context = context.rstrip()
             story.action(prefix+context, STORY_TEXTTYPE_USER)
 
