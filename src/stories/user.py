@@ -1,5 +1,6 @@
 from typing import List
 from pydantic import BaseModel, ValidationError, validator
+from utils import cut_trailing_sentence
 
 import json
 
@@ -114,7 +115,7 @@ class User:
 
         r = self.gensettings
         r.prompt = story.context(max_tokens=2048-r.gen_args.max_length)
-        aitext = provider.generate(r)
+        aitext = cut_trailing_sentence(provider.generate(r))
         story.action(aitext, STORY_TEXTTYPE_AI)
         await story.save()
 
