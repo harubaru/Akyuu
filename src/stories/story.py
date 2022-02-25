@@ -119,7 +119,7 @@ class Story:
         return story_str
             
     def context(self, max_tokens=2048): # generate context based on content
-        story_str = self.raw_txt()
+        story_str = self.raw_txt(format=False, highlight_lastline=False, char_limit=None)
         
         contextmgr = ContextManager(max_tokens)
 
@@ -143,12 +143,12 @@ class Story:
                 suffix='',
                 token_budget=2048,
                 reserved_tokens=512,
-                insertion_order=0,
+                insertion_order=1000,
                 insertion_position=-1,
                 trim_direction=TRIM_DIR_TOP,
                 trim_type=TRIM_TYPE_NEWLINE,
                 insertion_type=INSERTION_TYPE_NEWLINE,
-                forceActivation=True,
+                forced_activation=True,
                 cascading_activation=False
             )
             contextmgr.add_entry(preamble_entry)
@@ -200,12 +200,12 @@ class Story:
         )
 
         lorebook = Lorebook('./lorebooks/touhou.lorebook')
-        contextmgr.add_entries(lorebook.get_entries())
+        #contextmgr.add_entries(lorebook.get_entries())
         contextmgr.add_entry(story_entry)
         contextmgr.add_entry(memory_entry)
         contextmgr.add_entry(authorsnote_entry)
         
-        return preamble + contextmgr.context(max_tokens)
+        return contextmgr.context(max_tokens)
     
     def generate(self, provider: ModelProvider, request: ModelGenRequest, max_tokens=2048):
         request.prompt = self.context(max_tokens=max_tokens)

@@ -139,7 +139,6 @@ class Sukima_ModelProvider(ModelProvider):
         :rtype: str
         :raises Exception: If the request fails.
         """
-        print(args)
         args = {
             'model': args.model,
             'prompt': args.prompt,

@@ -131,7 +131,11 @@ async def cmd_story_submit(id: int=None, context: str=None, newline_prefix: bool
         raise ValueError('A story must be selected using !selectstory')
     uuid = current_stories[id]
     user = await get_user(id)
-    await user.generate(context, newline_prefix, uuid, provider)
+    story = await get_story(uuid)
+    prefix = ''
+    if len(story.content.entries) > 1:
+        prefix = '\n' if story.content.entries[-1][0][-1] != '\n' else ''
+    await user.generate(prefix+context, newline_prefix, uuid, provider)
 
 # !undo
 async def cmd_story_undo(id: int=None):
@@ -194,7 +198,7 @@ async def cmd_story_authorsnote(id: int=None, note: str=None):
         raise ValueError('story does not exist')
     story = await get_story(uuid)
     if note is not None:
-        story.content_metadata.authorsnote = f'[ A/N: {note} ]'
+        story.content_metadata.authorsNote = f'[ A/N: {note} ]'
     await story.save()
 
 # !add

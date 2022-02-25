@@ -174,7 +174,7 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
     async def print_authorsnote(self, id, embed):
         story = await get_current_story(id)
         embed.title = f'{story.content_metadata.title}'
-        embed.description = f'**``Author\'s Note``**:\n{story.content_metadata.authors_note}'
+        embed.description = f'**``Author\'s Note``**:\n{story.content_metadata.authorsNote}'
         return embed
     
     @stories.command(name='view', description='View your selected story.')
