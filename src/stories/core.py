@@ -171,6 +171,32 @@ async def cmd_story_alter(id: int=None, new_text: str=None):
     story.action(new_text, STORY_TEXTTYPE_ALTERED)
     await story.save()
 
+# !memory
+async def cmd_story_memory(id: int=None, memory: str=None):
+    if id not in current_stories:
+        raise ValueError('A story must be selected using !selectstory')
+    uuid = current_stories[id]
+    user = await get_user(id)
+    if uuid not in user.storyids:
+        raise ValueError('story does not exist')
+    story = await get_story(uuid)
+    if memory is not None:
+        story.content_metadata.memory = memory
+    await story.save()
+
+# !authorsnote
+async def cmd_story_authorsnote(id: int=None, note: str=None):
+    if id not in current_stories:
+        raise ValueError('A story must be selected using !selectstory')
+    uuid = current_stories[id]
+    user = await get_user(id)
+    if uuid not in user.storyids:
+        raise ValueError('story does not exist')
+    story = await get_story(uuid)
+    if note is not None:
+        story.content_metadata.authorsnote = f'[ A/N: {note} ]'
+    await story.save()
+
 # !add
 async def cmd_story_add(id: int=None, added_text: str=None):
     if id not in current_stories:

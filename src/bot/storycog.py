@@ -162,19 +162,36 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
     async def print_story(self, id, char_limit, embed):
         story = await get_current_story(id)
         embed.title = f'{story.content_metadata.title}'
-        embed.description =story.raw_txt(format=False, highlight_lastline=True, char_limit=char_limit)
+        embed.description = story.raw_txt(format=False, highlight_lastline=True, char_limit=char_limit)
+        return embed
+    
+    async def print_memory(self, id, embed):
+        story = await get_current_story(id)
+        embed.title = f'{story.content_metadata.title}'
+        embed.description = f'**``Memory``**:\n{story.content_metadata.memory}'
+        return embed
+    
+    async def print_authorsnote(self, id, embed):
+        story = await get_current_story(id)
+        embed.title = f'{story.content_metadata.title}'
+        embed.description = f'**``Author\'s Note``**:\n{story.content_metadata.authors_note}'
         return embed
     
     @stories.command(name='view', description='View your selected story.')
-    async def view(self, ctx: discord.ApplicationContext, text_amount: Option(int, 'The amount of characters to display.', required=False, default=768)):
-        embed = discord.Embed(title='Viewing your story...', description='Please wait warmly while we view your story.', color=embed_color)
+    async def view(self, ctx: discord.ApplicationContext, what: Option(str, "Choose what to view.", choices=['Story', 'Memory', 'Author\'s Note']), text_amount: Option(int, 'The amount of characters to display.', required=False, default=768)):
+        embed = discord.Embed(title='Viewing your story content...', description='Please wait warmly while we view your story.', color=embed_color)
         embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator}', icon_url=ctx.interaction.user.avatar.url)
         await ctx.respond(embed=embed)
         message = await ctx.interaction.original_message()
         try:
             id = ctx.interaction.user.id
 
-            embed = await self.print_story(id, text_amount, embed)
+            if what == 'Story':
+                embed = await self.print_story(id, text_amount, embed)
+            elif what == 'Memory':
+                embed = await self.print_memory(id, embed)
+            elif what == 'Author\'s Note':
+                embed = await self.print_authorsnote(id, embed)
             
             await message.edit(embed=embed)
         except Exception as e:
@@ -258,6 +275,40 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
             embed = discord.Embed(title='Alter failed.', description=f'An error has occurred while altering your last action.\nError: {e}', color=embed_color)
             await message.edit(embed=embed)
     
+    @stories.command(name='memory', description='Set the memory of the story so the AI can remember it.')
+    async def memory(self, ctx: discord.ApplicationContext, text: Option(str, 'The text you wish to set as the memory of the story.')):
+        embed = discord.Embed(title='Setting memory...', description='Please wait warmly while we set the memory of the story.', color=embed_color)
+        embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator}', icon_url=ctx.interaction.user.avatar.url)
+        await ctx.respond(embed=embed)
+        message = await ctx.interaction.original_message()
+        try:
+            id = ctx.interaction.user.id
+            await cmd_story_memory(id, text)
+
+            embed = await self.print_story(id, 768, embed)
+            embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator} - Successfully set the memory of the story.', icon_url=ctx.interaction.user.avatar.url)
+            await message.edit(embed=embed)
+        except Exception as e:
+            embed = discord.Embed(title='Setting memory failed.', description=f'An error has occurred while setting the memory of the story.\nError: {e}', color=embed_color)
+            await message.edit(embed=embed)
+    
+    @stories.command(name='authorsnote', description='Set the authors note of the story to add a subtle effect to the AI.')
+    async def authorsnote(self, ctx: discord.ApplicationContext, text: Option(str, 'The text you wish to set as the authors note of the story.')):
+        embed = discord.Embed(title='Setting authors note...', description='Please wait warmly while we set the authors note of the story.', color=embed_color)
+        embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator}', icon_url=ctx.interaction.user.avatar.url)
+        await ctx.respond(embed=embed)
+        message = await ctx.interaction.original_message()
+        try:
+            id = ctx.interaction.user.id
+            await cmd_story_authorsnote(id, text)
+
+            embed = await self.print_story(id, 768, embed)
+            embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator} - Successfully set the authors note of the story.', icon_url=ctx.interaction.user.avatar.url)
+            await message.edit(embed=embed)
+        except Exception as e:
+            embed = discord.Embed(title='Setting authors note failed.', description=f'An error has occurred while setting the authors note of the story.\nError: {e}', color=embed_color)
+            await message.edit(embed=embed)
+
     # supplemental commands
     @stories.command(name='download', description='Download the selected story.')
     async def download(self, ctx: discord.ApplicationContext):
