@@ -64,20 +64,38 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
             await message.edit(embed=embed)
     
     @stories.command(name='new', description='Create a new story.')
-    async def new(self, ctx: discord.ApplicationContext, title: Optional[str] = None, *, description: Optional[str] = None):
+    async def new(self, ctx: discord.ApplicationContext, title: Option(str, 'The title of your new story.'), description: Option(str, 'A description of your new story.'), author: Option(str, 'The author that the AI will mimic for your story.', required=False, default=None), genre: Option(str, 'The genre of your new story.', required=False, default=None), tags: Option(str, 'A list of tags for your new story. The AI will use this.', required=False, default=None), style: Option(str, 'The style that the AI will write in.', required=False, default=None)):
         embed = discord.Embed(title='Creating...', description='Please wait warmly while we create your story.', color=embed_color)
         embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator}', icon_url=ctx.interaction.user.avatar.url)
         await ctx.respond(embed=embed)
         message = await ctx.interaction.original_message()
         try:
             id = ctx.interaction.user.id
-            await cmd_story_new(id, title, description)
+            uuid = await cmd_story_new(id, title, description, author, genre, tags, style)
+            await cmd_story_select(id, uuid)
 
             embed.title = 'Story creation complete!'
-            embed.description = None
+            embed.description = 'Your story has been created!'
             await message.edit(embed=embed)
         except Exception as e:
             embed = discord.Embed(title='Story creation failed.', description=f'An error has occurred while creating your story.\nError: {e}', color=embed_color)
+            await message.edit(embed=embed)
+    
+    @stories.command(name='edit', description='Edit a story\'s metadata.')
+    async def edit(self, ctx: discord.ApplicationContext, title: Option(str, 'The title of your new story.'), description: Option(str, 'A description of your new story.'), author: Option(str, 'The author that the AI will mimic for your story.', required=False, default=None), genre: Option(str, 'The genre of your new story.', required=False, default=None), tags: Option(str, 'A list of tags for your new story. The AI will use this.', required=False, default=None), style: Option(str, 'The style that the AI will write in.', required=False, default=None)):
+        embed = discord.Embed(title='Editing...', description='Please wait warmly while we edit your story.', color=embed_color)
+        embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator}', icon_url=ctx.interaction.user.avatar.url)
+        await ctx.respond(embed=embed)
+        message = await ctx.interaction.original_message()
+        try:
+            id = ctx.interaction.user.id
+            await cmd_story_edit(id, title, description, author, genre, tags, style)
+
+            embed.title = 'Story edit complete!'
+            embed.description = None
+            await message.edit(embed=embed)
+        except Exception as e:
+            embed = discord.Embed(title='Story edit failed.', description=f'An error has occurred while editing your story.\nError: {e}', color=embed_color)
             await message.edit(embed=embed)
     
     @stories.command(name='delete', description='Delete your story.')

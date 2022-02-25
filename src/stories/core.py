@@ -4,7 +4,7 @@ from src.stories.db import (
     user_create, user_update, user_delete, user_get,
     story_create, story_update, story_delete, story_get
 )
-from src.stories.story import STORY_TEXTTYPE_ALTERED, StoryMetadataV1, StoryContentV1, Story
+from src.stories.story import STORY_TEXTTYPE_ALTERED, STORY_TEXTTYPE_USER, StoryMetadataV1, StoryContentV1, Story
 from src.stories.user import User
 from src.stories.api import ModelProvider
 from src.core.config import settings
@@ -84,7 +84,7 @@ async def cmd_user_settings(id: int=None):
 # story commands
 
 # !newstory
-async def cmd_story_new(id: int=None, title: str=None, description: str=None):
+async def cmd_story_new(id: int=None, title: str=None, description: str=None, author: str=None, genre: str=None, tags: str=None, style: str=None):
     user = await get_user(id)
     if user is None:
         raise ValueError('user does not exist')
@@ -93,6 +93,12 @@ async def cmd_story_new(id: int=None, title: str=None, description: str=None):
         story.content_metadata.title = title
     if description is not None:
         story.content_metadata.description = description
+    
+    story.content_metadata.author = author
+    story.content_metadata.genre = genre
+    story.content_metadata.tags = tags
+    story.content_metadata.style = style
+
     await story.save()
     return story.story_uuid
 
@@ -163,4 +169,43 @@ async def cmd_story_alter(id: int=None, new_text: str=None):
     story = await get_story(uuid)
     story.undo()
     story.action(new_text, STORY_TEXTTYPE_ALTERED)
+    await story.save()
+
+# !add
+async def cmd_story_add(id: int=None, added_text: str=None):
+    if id not in current_stories:
+        raise ValueError('A story must be selected using !selectstory')
+    uuid = current_stories[id]
+    user = await get_user(id)
+    if uuid not in user.storyids:
+        raise ValueError('story does not exist')
+    story = await get_story(uuid)
+    story.undo()
+    # add a newline if the last character isn't a newline
+    prefix = '\n' if story.content.entries[-1][0][-1] != '\n' else ''
+    story.action(f'{prefix+added_text}\n', STORY_TEXTTYPE_USER)
+    await story.save()
+
+# !edit
+async def cmd_story_edit(id: int=None, new_title: str=None, new_description: str=None, new_author: str=None, new_genre: str=None, new_tags: str=None, new_style: str=None):
+    if id not in current_stories:
+        raise ValueError('A story must be selected using !selectstory')
+    uuid = current_stories[id]
+    user = await get_user(id)
+    if uuid not in user.storyids:
+        raise ValueError('story does not exist')
+    story = await get_story(uuid)
+    story.undo()
+    if new_title is not None:
+        story.content_metadata.title = new_title
+    if new_description is not None:
+        story.content_metadata.description = new_description
+    if new_author is not None:
+        story.content_metadata.author = new_author
+    if new_genre is not None:
+        story.content_metadata.genre = new_genre
+    if new_tags is not None:
+        story.content_metadata.tags = new_tags
+    if new_style is not None:
+        story.content_metadata.style = new_style
     await story.save()

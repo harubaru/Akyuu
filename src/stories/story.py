@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 
 import json
@@ -24,6 +25,10 @@ class StoryMetadataV1(BaseModel):
     version: int = 1
     title: str = 'New Story'
     description: str = 'A new beginning...'
+    author: Optional[str] = None
+    genre: Optional[str] = None
+    tags: Optional[str] = None
+    style: Optional[str] = None
     memory: str = ''
     authorsNote: str = ''
     lorebook: str = None
@@ -118,9 +123,35 @@ class Story:
         
         contextmgr = ContextManager(max_tokens)
 
-        preamble = '***\n' if self.content_metadata.contextPreamble else ''
+        # Preamble Entry: Sets up the prompting for the initial story.
         if self.content_metadata.contextPreamble:
-            max_tokens -= 1
+            format_str = f'[ Title: {self.content_metadata.title}'
+            if self.content_metadata.author:
+                format_str += f'; Author: {self.content_metadata.author}'
+            if self.content_metadata.genre:
+                format_str += f'; Genre: {self.content_metadata.genre}'
+            if self.content_metadata.tags:
+                format_str += f'; Tags: {self.content_metadata.tags}'
+            if self.content_metadata.style:
+                format_str += f'; Style: {self.content_metadata.style}'
+            if self.content_metadata.description:
+                format_str += f'; Summary: {self.content_metadata.description}'
+            format_str += ' ]\n***\n'
+            preamble_entry = ContextEntry(
+                text=format_str,
+                prefix='',
+                suffix='',
+                token_budget=2048,
+                reserved_tokens=512,
+                insertion_order=0,
+                insertion_position=-1,
+                trim_direction=TRIM_DIR_TOP,
+                trim_type=TRIM_TYPE_NEWLINE,
+                insertion_type=INSERTION_TYPE_NEWLINE,
+                forceActivation=True,
+                cascading_activation=False
+            )
+            contextmgr.add_entry(preamble_entry)
 
         # Story Entry: Always included
         story_entry = ContextEntry(
