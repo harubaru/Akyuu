@@ -98,7 +98,7 @@ class User:
         await story_delete(uuid)
         await self.save()
     
-    async def generate(self, context: str, newline_prefix: bool=True, uuid: str=None, provider: ModelProvider=None):
+    async def generate(self, context: str, uuid: str=None, provider: ModelProvider=None):
         if self.quota == 0:
             raise ValueError('quota exceeded')
         # todo handle quota
@@ -109,9 +109,8 @@ class User:
             raise ValueError('story not found')
         
         if context is not None:
-            prefix = '\n' if newline_prefix else ''
             context = context.rstrip()
-            story.action(prefix+context, STORY_TEXTTYPE_USER)
+            story.action(context, STORY_TEXTTYPE_USER)
 
         r = self.gensettings
         r.prompt = story.context(max_tokens=1280-r.gen_args.max_length)

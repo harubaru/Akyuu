@@ -199,7 +199,7 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
             await message.edit(embed=embed)
 
     @stories.command(name='submit', description='Submit your story to the AI.')
-    async def submit(self, ctx: discord.ApplicationContext, text: Option(str, 'The text you wish to submit to the AI'), prepend_newline: Option(bool, 'Set this to false for generating within the same paragraph of text.', required=False, default=True)):
+    async def submit(self, ctx: discord.ApplicationContext, text: Option(str, 'The text you wish to submit to the AI', required=False, default=None)):
         embed = discord.Embed(title='Submitting...', description='Please wait warmly while we submit your story.', color=embed_color)
         embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator}', icon_url=ctx.interaction.user.avatar.url)
         await ctx.respond(embed=embed)
@@ -211,10 +211,7 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
             embed.set_footer(text=f'Generating...', icon_url=ctx.interaction.user.avatar.url)
             await message.edit(embed=embed)
 
-            if prepend_newline == False:
-                text = ' ' + text
-
-            await cmd_story_submit(id, text, prepend_newline, self.model_provider)
+            await cmd_story_submit(id, text, self.model_provider)
 
             # now print the generated story
             embed = await self.print_story(id, 768, embed)

@@ -126,7 +126,7 @@ async def cmd_story_list(id: int=None):
     return await user.get_stories()
 
 # !submit
-async def cmd_story_submit(id: int=None, context: str=None, newline_prefix: bool=True, provider: ModelProvider=None):
+async def cmd_story_submit(id: int=None, context: str=None, provider: ModelProvider=None):
     if id not in current_stories:
         raise ValueError('A story must be selected using !selectstory')
     uuid = current_stories[id]
@@ -135,7 +135,9 @@ async def cmd_story_submit(id: int=None, context: str=None, newline_prefix: bool
     prefix = ''
     if len(story.content.entries) > 1:
         prefix = '\n' if story.content.entries[-1][0][-1] != '\n' else ''
-    await user.generate(prefix+context, newline_prefix, uuid, provider)
+        if context != None:
+            context = prefix + context
+    await user.generate(context, uuid, provider)
 
 # !undo
 async def cmd_story_undo(id: int=None):
@@ -160,7 +162,7 @@ async def cmd_story_retry(id: int=None, provider: ModelProvider=None):
     story = await get_story(uuid)
     story.undo()
     await story.save()
-    await user.generate(None, False, uuid, provider)
+    await user.generate(None, uuid, provider)
 
 # !alter
 async def cmd_story_alter(id: int=None, new_text: str=None):
