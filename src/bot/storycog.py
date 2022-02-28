@@ -5,11 +5,13 @@ import discord
 from discord.commands import SlashCommandGroup, Option
 from discord.ext import commands
 
+from src.core.logging import get_logger
 from src.core.config import settings
 from src.stories.api import GooseAI_ModelProvider, Sukima_ModelProvider
 from src.stories.core import *
 
 embed_color = discord.Colour(value=settings.DISCORD_EMBED_COLOR)
+logger = get_logger(__name__)
 
 class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to generate stories.'):
     def __init__(self, bot):
@@ -24,13 +26,25 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
     accounts = SlashCommandGroup('accounts', 'Account management commands.')
     stories = SlashCommandGroup('stories', 'Story management commands.')
 
+    # create listener for on disconnect
+    @commands.Cog.listener()
+    async def on_disconnect(self):
+        # cleanup the task by cancelling self.cmd_executor
+        for task in asyncio.Task.all_tasks(self.bot.loop):
+            if task is self.cmd_executor:
+                task.cancel()
+
     async def cmd_executor(self):
         while True:
-            task = await self.queue.get()
-            # run the task concurrently, do not wait for it to finish
-            self.bot.loop.create_task(task)
-            self.queue.task_done()
-            await asyncio.sleep(0.01)
+            try:
+                task = await self.queue.get()
+                # run the task concurrently, do not wait for it to finish
+                self.bot.loop.create_task(task)
+                self.queue.task_done()
+                await asyncio.sleep(0.01)
+            except Exception as e:
+                logger.error(f'Error in cmd_executor: {e}')
+                await asyncio.sleep(0.01)
 
     @accounts.command(name='register', description='Register a new account.')
     async def register(self, ctx: discord.ApplicationContext):
@@ -210,18 +224,29 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
             await message.edit(embed=embed)
     
     async def async_submit(self, ctx: discord.ApplicationContext, text, embed):
-        await cmd_story_submit(ctx.interaction.user.id, text, self.model_provider)
-        embed = await self.print_story(ctx.interaction.user.id, 768, embed)
-        embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator} - Successfully submitted the action.', icon_url=ctx.interaction.user.avatar.url)
         original_message = await ctx.interaction.original_message()
-        await original_message.edit(embed=embed)
+        try:
+            await cmd_story_submit(ctx.interaction.user.id, text, self.model_provider)
+            embed = await self.print_story(ctx.interaction.user.id, 768, embed)
+            embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator} - Successfully submitted the action.', icon_url=ctx.interaction.user.avatar.url)
+            await original_message.edit(embed=embed)
+        except Exception as e:
+            embed = discord.Embed(title='Story submission failed.', description=f'An error has occurred while submitting your story.\nError: {e}', color=embed_color)
+            embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator} - Submission failed.', icon_url=ctx.interaction.user.avatar.url)
+            await original_message.edit(embed=embed)
     
     async def async_retry(self, ctx: discord.ApplicationContext, embed):
-        await cmd_story_retry(ctx.interaction.user.id, self.model_provider)
-        embed = await self.print_story(ctx.interaction.user.id, 768, embed)
-        embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator} - Successfully retried the action.', icon_url=ctx.interaction.user.avatar.url)
         original_message = await ctx.interaction.original_message()
-        await original_message.edit(embed=embed)
+        try:
+            await cmd_story_retry(ctx.interaction.user.id, self.model_provider)
+            embed = await self.print_story(ctx.interaction.user.id, 768, embed)
+            embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator} - Successfully retried the action.', icon_url=ctx.interaction.user.avatar.url)
+            original_message = await ctx.interaction.original_message()
+            await original_message.edit(embed=embed)
+        except Exception as e:
+            embed = discord.Embed(title='Story retry failed.', description=f'An error has occurred while retrying your story.\nError: {e}', color=embed_color)
+            embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator} - Retry failed.', icon_url=ctx.interaction.user.avatar.url)
+            await original_message.edit(embed=embed)
 
     @stories.command(name='submit', description='Submit your story to the AI.')
     async def submit(self, ctx: discord.ApplicationContext, text: Option(str, 'The text you wish to submit to the AI', required=True)):

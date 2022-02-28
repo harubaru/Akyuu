@@ -113,7 +113,7 @@ class User:
             story.action(context, STORY_TEXTTYPE_USER)
 
         r = self.gensettings
-        r.prompt = story.context(max_tokens=1280-r.gen_args.max_length)
+        r.prompt = story.context(max_tokens=1024-r.gen_args.max_length)
         r.sample_args.bad_words = [' Author', 'Author', 'Chapter', ' Chapter', '***']
         aitext = cut_trailing_sentence(await provider.generate(r))
         # check if aitext ends with a newline, if it doesn't, add one
