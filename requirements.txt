@@ -4,4 +4,5 @@ asyncpg
 alembic
 sqlalchemy
 psycopg2
+aiohttp
 git+https://github.com/Pycord-Development/pycord.git

@@ -1,3 +1,4 @@
+import aiohttp
 from typing import Optional, List, Any
 from pydantic import BaseModel
 import requests
@@ -130,7 +131,7 @@ class Sukima_ModelProvider(ModelProvider):
         else:
             raise Exception(f'Could not authenticate with Sukima. Error: {r.text}')
         
-    def generate(self, args: ModelGenRequest) -> str:
+    async def generate(self, args: ModelGenRequest) -> str:
         """Generate a response from the Sukima endpoint.
         
         :param args: The arguments to pass to the endpoint.
@@ -161,15 +162,17 @@ class Sukima_ModelProvider(ModelProvider):
                 'eos_token_id': args.gen_args.eos_token_id
             }
         }
-        try:
-            r = requests.post(f'{self.endpoint_url}/api/v1/models/generate', data=json.dumps(args), headers={'Authorization': f'Bearer {self.token}'}, timeout=60.0)
-        except Exception as e:
-            raise e
-        if r.status_code == 200:
-            return r.json()['output'][len(args['prompt']):]
-        else:
-            raise Exception(f'Could not generate text with Sukima. Error: {r.json()}')
-
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(f'{self.endpoint_url}/api/v1/models/generate', json=args, headers={'Authorization': f'Bearer {self.token}'}, timeout=30.0) as resp:
+                    if resp.status == 200:
+                        js = await resp.json()
+                        return js['output'][len(args['prompt']):]
+                    else:
+                        raise Exception(f'Could not generate response. Error: {resp.text}')
+            except Exception as e:
+                raise e
+        
 class GooseAI_ModelProvider(ModelProvider):
     def __init__(self, endpoint_url: str = 'https://api.goose.ai', **kwargs):
         """Constructor for GooseAI_ModelProvider.
@@ -189,7 +192,7 @@ class GooseAI_ModelProvider(ModelProvider):
             raise Exception('token is not in kwargs')
         self.token = self.kwargs['token']
     
-    def generate(self, args: ModelGenRequest) -> str:
+    async def generate(self, args: ModelGenRequest) -> str:
         """Generate a response from the GooseAI endpoint.
         
         :param args: The arguments to pass to the endpoint.
@@ -212,11 +215,13 @@ class GooseAI_ModelProvider(ModelProvider):
             'repetition_penalty_range': args.sample_args.rep_p_range,
             'repetition_penalty_slope': args.sample_args.rep_p_slope
         }
-        try:
-            r = requests.post(f'{self.endpoint_url}/v1/engines/{model}/completions', data=json.dumps(args), headers={'Authorization': f'Bearer {self.token}'}, timeout=30.0)
-        except Exception as e:
-            raise e
-        if r.status_code == 200:
-            return r.json()['choices'][0]['text']
-        else:
-            raise Exception(f'Could not generate text with GooseAI. Error: {r.json()}')
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(f'{self.endpoint_url}/v1/engines/{model}/completions', json=args, headers={'Authorization': f'Bearer {self.token}'}, timeout=30.0) as resp:
+                    if resp.status == 200:
+                        js = await resp.json()
+                        return js['choices'][0]['text']
+                    else:
+                        raise Exception(f'Could not generate response. Error: {resp.text}')
+            except Exception as e:
+                raise e
