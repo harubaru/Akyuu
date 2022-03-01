@@ -126,7 +126,7 @@ async def cmd_story_list(id: int=None):
     return await user.get_stories()
 
 # !submit
-async def cmd_story_submit(id: int=None, context: str=None, provider: ModelProvider=None):
+async def cmd_story_submit(id: int=None, context: str=None, provider: ModelProvider=None, generate: bool=True):
     if id not in current_stories:
         raise ValueError('A story must be selected using !selectstory')
     uuid = current_stories[id]
@@ -137,7 +137,13 @@ async def cmd_story_submit(id: int=None, context: str=None, provider: ModelProvi
         prefix = '\n' if story.content.entries[-1][0][-1] != '\n' else ''
         if context != None:
             context = prefix + context
-    await user.generate(context, uuid, provider)
+    if generate:
+        await user.generate(context, uuid, provider)
+    else:
+        if context[-1] != '\n':
+            context += '\n'
+        story.action(context, STORY_TEXTTYPE_USER)
+        await story.save()
 
 # !undo
 async def cmd_story_undo(id: int=None):
@@ -174,7 +180,7 @@ async def cmd_story_alter(id: int=None, new_text: str=None):
         raise ValueError('story does not exist')
     story = await get_story(uuid)
     story.undo()
-    story.action(new_text, STORY_TEXTTYPE_ALTERED)
+    story.action('\n'+new_text, STORY_TEXTTYPE_ALTERED)
     await story.save()
 
 # !memory

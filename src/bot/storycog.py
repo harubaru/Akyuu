@@ -223,10 +223,10 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
             embed = discord.Embed(title='Story viewing failed.', description=f'An error has occurred while viewing your story.\nError: {e}', color=embed_color)
             await message.edit(embed=embed)
     
-    async def async_submit(self, ctx: discord.ApplicationContext, text, embed):
+    async def async_submit(self, ctx: discord.ApplicationContext, text, embed, generate):
         original_message = await ctx.interaction.original_message()
         try:
-            await cmd_story_submit(ctx.interaction.user.id, text, self.model_provider)
+            await cmd_story_submit(ctx.interaction.user.id, text, self.model_provider, generate)
             embed = await self.print_story(ctx.interaction.user.id, 768, embed)
             embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator} - Successfully submitted the action.', icon_url=ctx.interaction.user.avatar.url)
             await original_message.edit(embed=embed)
@@ -249,13 +249,13 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
             await original_message.edit(embed=embed)
 
     @stories.command(name='submit', description='Submit your story to the AI.')
-    async def submit(self, ctx: discord.ApplicationContext, text: Option(str, 'The text you wish to submit to the AI', required=True)):
+    async def submit(self, ctx: discord.ApplicationContext, text: Option(str, 'The text you wish to submit to the AI', required=True), no_generate: Option(bool, 'Set this to true to just input text without generating anything.', required=False, default=False)):
         embed = discord.Embed(title='Submitting...', description='Please wait warmly while we submit your story.', color=embed_color)
         embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator}', icon_url=ctx.interaction.user.avatar.url)
         await ctx.respond(embed=embed)
         message = await ctx.interaction.original_message()
         try:
-            await self.queue.put(self.async_submit(ctx, text, embed))
+            await self.queue.put(self.async_submit(ctx, text, embed, not no_generate))
         except Exception as e:
             embed = discord.Embed(title='Story submission failed.', description=f'An error has occurred while submitting your story.\nError: {e}', color=embed_color)
             await message.edit(embed=embed)
@@ -267,7 +267,7 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
         await ctx.respond(embed=embed)
         message = await ctx.interaction.original_message()
         try:
-            await self.queue.put(self.async_submit(ctx, None, embed))
+            await self.queue.put(self.async_submit(ctx, None, embed, True))
         except Exception as e:
             embed = discord.Embed(title='Story continuation failed.', description=f'An error has occurred while continuing your story.\nError: {e}', color=embed_color)
             await message.edit(embed=embed)
@@ -302,13 +302,15 @@ class StoryCog(commands.Cog, name='Stories', description='Use our powerful AI to
             await message.edit(embed=embed)
     
     @stories.command(name='alter', description='Alter the last action.')
-    async def alter(self, ctx: discord.ApplicationContext, text: Option(str, 'Replace the last action with new text.')):
+    async def alter(self, ctx: discord.ApplicationContext, text: Option(str, 'Replace the last action with new text.'), no_newline: Option(bool, 'Don\'t append a newline to the altered text.', required=False, default=False)):
         embed = discord.Embed(title='Altering...', description='Please wait warmly while we alter your last action.', color=embed_color)
         embed.set_footer(text=f'{ctx.interaction.user.name}#{ctx.interaction.user.discriminator}', icon_url=ctx.interaction.user.avatar.url)
         await ctx.respond(embed=embed)
         message = await ctx.interaction.original_message()
         try:
             id = ctx.interaction.user.id
+            if no_newline == False:
+                text = '\n' + text
             await cmd_story_alter(id, text)
 
             embed = await self.print_story(id, 768, embed)
