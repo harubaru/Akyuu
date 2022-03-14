@@ -68,4 +68,4 @@ The Memory is used to manually store the events in your story. Currently, this i
 
 ### Any questions? Come hop on by to our Discord server!
 
-![Discord Server](https://discordapp.com/api/guilds/930499730843250783/widget.png?style=banner2)
+[![Discord Server](https://discordapp.com/api/guilds/930499730843250783/widget.png?style=banner2)](https://discord.gg/Sx6Spmsgx7)
